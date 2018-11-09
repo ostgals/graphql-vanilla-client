@@ -24,12 +24,9 @@ const Repository = ({ repository, fetchMoreIssues }) => {
 
       <hr />
 
-      <button
-        onClick={fetchMoreIssues}
-        disabled={!repository.issues.pageInfo.hasNextPage}
-      >
-        More
-      </button>
+      {repository.issues.pageInfo.hasNextPage && (
+        <button onClick={fetchMoreIssues}>More</button>
+      )}
     </div>
   );
 };
