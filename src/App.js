@@ -13,14 +13,14 @@ const axiosGitHubGraphQL = axios.create({
 });
 
 const GET_ISSUES_OF_REPOSITORY = `
-  query ($organization: String!, $repository: String!) {
+  query ($organization: String!, $repository: String!, $cursor: String) {
     organization (login: $organization) {
       name
       url
       repository (name: $repository) {
         name
         url
-        issues (last: 5) {
+        issues (first: 5, after: $cursor, states: [OPEN]) {
           edges {
             node {
               id
@@ -65,20 +65,51 @@ class App extends Component {
     e.preventDefault();
   };
 
-  fetchFromGitHub = () => {
-    const [organization, repository] = this.state.path.split('/');
-    const query = GET_ISSUES_OF_REPOSITORY;
-    const variables = { organization, repository };
+  resolveIssues = (result, cursor) => state => {
+    const { data, errors } = result.data;
 
-    axiosGitHubGraphQL.post('', { query, variables }).then(result =>
-      this.setState({
-        organization: result.data.data.organization,
-        errors: result.data.errors,
-      }),
-    );
+    if (!cursor) {
+      return {
+        organization: data.organization,
+        errors,
+      };
+    }
+
+    const concatenatedIssues = [
+      ...state.organization.repository.issues.edges,
+      ...data.organization.repository.issues.edges,
+    ];
+
+    return {
+      organization: {
+        ...data.organization,
+        repository: {
+          ...data.organization.repository,
+          issues: {
+            ...data.organization.repository.issues,
+            edges: concatenatedIssues,
+          },
+        },
+      },
+      errors,
+    };
   };
 
-  fetchMoreIssues = () => {};
+  fetchFromGitHub = cursor => {
+    const [organization, repository] = this.state.path.split('/');
+    const query = GET_ISSUES_OF_REPOSITORY;
+    const variables = { organization, repository, cursor };
+
+    axiosGitHubGraphQL
+      .post('', { query, variables })
+      .then(result => this.setState(this.resolveIssues(result, cursor)));
+  };
+
+  fetchMoreIssues = () => {
+    const { endCursor } = this.state.organization.repository.issues.pageInfo;
+    console.log(endCursor);
+    this.fetchFromGitHub(endCursor);
+  };
 
   render() {
     const { path, organization, errors } = this.state;

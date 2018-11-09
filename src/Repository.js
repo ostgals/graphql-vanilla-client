@@ -18,13 +18,18 @@ const Repository = ({ repository, fetchMoreIssues }) => {
                 <li key={node.id}>{node.content}</li>
               ))}
             </ul>
-
-            <hr />
-
-            <button onClick={fetchMoreIssues}>More</button>
           </li>
         ))}
       </ul>
+
+      <hr />
+
+      <button
+        onClick={fetchMoreIssues}
+        disabled={!repository.issues.pageInfo.hasNextPage}
+      >
+        More
+      </button>
     </div>
   );
 };
