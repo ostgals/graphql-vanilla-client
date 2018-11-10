@@ -1,5 +1,7 @@
 import React from 'react';
 
+import IssueList from './components/IssueList';
+
 const Repository = ({ repository, fetchMoreIssues, toggleStar }) => {
   return (
     <div>
@@ -13,19 +15,7 @@ const Repository = ({ repository, fetchMoreIssues, toggleStar }) => {
         {repository.viewerHasStarred ? 'Unstar' : 'Star'}
       </button>
 
-      <ul>
-        {repository.issues.edges.map(({ node }) => (
-          <li key={node.id}>
-            <a href={node.url}>{node.title}</a>
-
-            <ul>
-              {node.reactions.edges.map(({ node }) => (
-                <li key={node.id}>{node.content}</li>
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ul>
+      <IssueList issues={repository.issues} />
 
       <hr />
 
