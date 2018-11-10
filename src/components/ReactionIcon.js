@@ -1,12 +1,18 @@
 import React from 'react';
 
-const icons = {
+export const icons = {
   THUMBS_UP: '👍',
-  HOORAY: '🙌',
-  LAUGH: '😆',
-  HEART: '💛',
+  THUMBS_DOWN: '👎',
+  LAUGH: '😄',
+  HOORAY: '🎉',
+  CONFUSED: '😕',
+  HEART: '❤️',
 };
 
-const ReactionIcon = ({ icon }) => <span>{icons[icon] || icon}</span>;
+const ReactionIcon = ({ icon, ...props }) => (
+  <span className="reaction-icon" {...props}>
+    {icons[icon] || icon}
+  </span>
+);
 
 export default ReactionIcon;
