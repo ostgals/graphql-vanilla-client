@@ -3,6 +3,9 @@ import axios from 'axios';
 
 import Organization from './Organization';
 
+import { GET_ISSUES_OF_REPOSITORY } from './graphql/queries';
+import { ADD_STAR, REMOVE_STAR } from './graphql/mutations';
+
 const axiosGitHubGraphQL = axios.create({
   baseURL: 'https://api.github.com/graphql',
   headers: {
@@ -11,41 +14,6 @@ const axiosGitHubGraphQL = axios.create({
     }`,
   },
 });
-
-const GET_ISSUES_OF_REPOSITORY = `
-  query ($organization: String!, $repository: String!, $cursor: String) {
-    organization (login: $organization) {
-      name
-      url
-      repository (name: $repository) {
-        name
-        url
-        issues (first: 5, after: $cursor, states: [OPEN]) {
-          edges {
-            node {
-              id
-              title
-              url
-              reactions (last: 3) {
-                edges {
-                  node {
-                    id
-                    content
-                  }
-                }
-              }
-            }
-          }
-          totalCount
-          pageInfo {
-            endCursor
-            hasNextPage
-          }
-        }
-      }
-    }
-  }
-`;
 
 class App extends Component {
   state = {
@@ -95,6 +63,32 @@ class App extends Component {
     };
   };
 
+  resolveToggleStarMutation = result => state => {
+    const { viewerHasStarred } = result.data.data.toggleStar.starrable;
+    const { errors } = result.data;
+    const { totalCount } = state.organization.repository.stargazers;
+
+    if (errors) {
+      console.log(errors);
+      return { errors };
+    }
+
+    return {
+      ...state,
+      organization: {
+        ...state.organization,
+        repository: {
+          ...state.organization.repository,
+          viewerHasStarred,
+          stargazers: {
+            ...state.organization.repository.stargazers,
+            totalCount: totalCount + (viewerHasStarred ? +1 : -1),
+          },
+        },
+      },
+    };
+  };
+
   fetchFromGitHub = cursor => {
     const [organization, repository] = this.state.path.split('/');
     const query = GET_ISSUES_OF_REPOSITORY;
@@ -109,6 +103,17 @@ class App extends Component {
     const { endCursor } = this.state.organization.repository.issues.pageInfo;
     console.log(endCursor);
     this.fetchFromGitHub(endCursor);
+  };
+
+  toggleStar = ({ id, viewerHasStarred }) => {
+    axiosGitHubGraphQL
+      .post('', {
+        query: viewerHasStarred ? REMOVE_STAR : ADD_STAR,
+        variables: { repositoryId: id },
+      })
+      .then(result => {
+        this.setState(this.resolveToggleStarMutation(result));
+      });
   };
 
   render() {
@@ -137,6 +142,7 @@ class App extends Component {
             organization={organization}
             errors={errors}
             fetchMoreIssues={this.fetchMoreIssues}
+            toggleStar={this.toggleStar}
           />
         ) : (
           <p>No information yet...</p>

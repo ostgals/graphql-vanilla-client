@@ -1,12 +1,17 @@
 import React from 'react';
 
-const Repository = ({ repository, fetchMoreIssues }) => {
+const Repository = ({ repository, fetchMoreIssues, toggleStar }) => {
   return (
     <div>
       <p>
         <strong>in Repository</strong>{' '}
         <a href={repository.url}>{repository.name}</a>
       </p>
+
+      <button type="button" onClick={() => toggleStar(repository)}>
+        {repository.stargazers.totalCount}{' '}
+        {repository.viewerHasStarred ? 'Unstar' : 'Star'}
+      </button>
 
       <ul>
         {repository.issues.edges.map(({ node }) => (
